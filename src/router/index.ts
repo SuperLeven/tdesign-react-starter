@@ -12,7 +12,7 @@ import otherRoutes from './modules/others';
 export interface IRouter {
   path: string;
   redirect?: string;
-  Component?: React.FC<BrowserRouterProps> | (() => any);
+  Component?: React.FC<BrowserRouterProps> | (() => any) | string;
   /**
    * 当前路由是否全屏显示
    */
@@ -22,7 +22,7 @@ export interface IRouter {
    */
   meta?: {
     title?: string;
-    Icon?: React.FC;
+    Icon?: React.FC | string;
     /**
      * 侧边栏隐藏该路由
      */
@@ -52,4 +52,6 @@ const routes: IRouter[] = [
 
 const allRoutes = [...routes, ...dashboard, ...list, ...form, ...detail, ...result, ...user, ...login, ...otherRoutes];
 
+export const beforeRoutes = [...routes, ...dashboard, ...list, ...form, ...detail, ...result, ...user, ...login];
+export const afterRoutes = [...otherRoutes];
 export default allRoutes;

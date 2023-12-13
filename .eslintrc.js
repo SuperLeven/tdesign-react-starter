@@ -18,6 +18,7 @@ module.exports = {
     },
   },
   rules: {
+    "react/react-in-jsx-scope": "off",
     'no-shadow': 'off',
     'no-param-reassign': ['error', { props: false }],
     'no-console': 'off',

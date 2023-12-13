@@ -1,10 +1,13 @@
-import React, { Suspense, memo } from 'react';
+import React, { Suspense, memo, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout, Loading } from 'tdesign-react';
-import routers, { IRouter } from 'router';
+import { IRouter } from 'router';
 import { resolve } from 'utils/path';
 import Page from './Page';
 import Style from './AppRouter.module.less';
+import { useRouters } from 'hooks/useRouter';
+import { useAppDispatch, useAppSelector } from 'modules/store';
+import { fetchRoutes, selectGlobal } from 'modules/global';
 
 const { Content } = Layout;
 
@@ -48,18 +51,32 @@ const renderRoutes: TRenderRoutes = (routes, parentPath = '', breadcrumb = []) =
     return children ? renderRoutes(children, currentPath, currentBreadcrumb) : null;
   });
 
-const AppRouter = () => (
-  <Content>
-    <Suspense
-      fallback={
+const AppRouter = () => {
+  const routers = useRouters();
+  const { isLoading } = useAppSelector(selectGlobal); // 是否加载动态路由中
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    dispatch(fetchRoutes());
+  }, []);
+  return (
+    <Content>
+      {isLoading ? (
         <div className={Style.loading}>
           <Loading />
         </div>
-      }
-    >
-      <Routes>{renderRoutes(routers)}</Routes>
-    </Suspense>
-  </Content>
-);
+      ) : (
+        <Suspense
+          fallback={
+            <div className={Style.loading}>
+              <Loading />
+            </div>
+          }
+        >
+          <Routes>{renderRoutes(routers as IRouter[])}</Routes>
+        </Suspense>
+      )}
+    </Content>
+  );
+};
 
 export default memo(AppRouter);

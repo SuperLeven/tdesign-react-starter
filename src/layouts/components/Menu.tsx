@@ -1,12 +1,13 @@
-import React, { memo, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { memo, useCallback, useState } from 'react';
+import { useNavigate, useLocation, NavigateFunction } from 'react-router-dom';
 import { Menu, MenuValue } from 'tdesign-react';
-import router, { IRouter } from 'router';
+import { IRouter } from 'router';
 import { resolve } from 'utils/path';
 import { useAppSelector } from 'modules/store';
 import { selectGlobal } from 'modules/global';
 import MenuLogo from './MenuLogo';
 import Style from './Menu.module.less';
+import { useRouters } from 'hooks/useRouter';
 
 const { SubMenu, MenuItem, HeadMenu } = Menu;
 
@@ -15,56 +16,56 @@ interface IMenuProps {
   showOperation?: boolean;
 }
 
-const renderMenuItems = (menu: IRouter[], parentPath = '') => {
-  const navigate = useNavigate();
-  return menu.map((item) => {
-    const { children, meta, path } = item;
+const renderMenuItems = (navigate: NavigateFunction, menus: IRouter[] = [], parentPath = '') => {
+  function menuItemsRender(menu: IRouter[], parentPath = '') {
+    return menu.map((item) => {
+      const { children, meta, path } = item;
+      if (!meta || meta?.hidden === true) {
+        // 无meta信息 或 hidden == true，路由不显示为菜单
+        return null;
+      }
+      const { Icon, title, single } = meta;
+      const routerPath = resolve(parentPath, path);
 
-    if (!meta || meta?.hidden === true) {
-      // 无meta信息 或 hidden == true，路由不显示为菜单
-      return null;
-    }
-
-    const { Icon, title, single } = meta;
-    const routerPath = resolve(parentPath, path);
-
-    if (!children || children.length === 0) {
-      return (
-        <MenuItem
-          key={routerPath}
-          value={routerPath}
-          icon={Icon ? <Icon /> : undefined}
-          onClick={() => navigate(routerPath)}
-        >
-          {title}
-        </MenuItem>
-      );
-    }
-
-    if (single && children?.length > 0) {
-      const firstChild = children[0];
-      if (firstChild?.meta && !firstChild?.meta?.hidden) {
-        const { Icon, title } = meta;
-        const singlePath = resolve(resolve(parentPath, path), firstChild.path);
+      if (!children || children.length === 0) {
         return (
           <MenuItem
-            key={singlePath}
-            value={singlePath}
+            key={routerPath}
+            value={routerPath}
             icon={Icon ? <Icon /> : undefined}
-            onClick={() => navigate(singlePath)}
+            onClick={() => navigate(routerPath)}
           >
             {title}
           </MenuItem>
         );
       }
-    }
 
-    return (
-      <SubMenu key={routerPath} value={routerPath} title={title} icon={Icon ? <Icon /> : undefined}>
-        {renderMenuItems(children, routerPath)}
-      </SubMenu>
-    );
-  });
+      if (single && children?.length > 0) {
+        const firstChild = children[0];
+        if (firstChild?.meta && !firstChild?.meta?.hidden) {
+          const { Icon, title } = meta;
+          const singlePath = resolve(resolve(parentPath, path), firstChild.path);
+          return (
+            <MenuItem
+              key={singlePath}
+              value={singlePath}
+              icon={Icon ? <Icon /> : undefined}
+              onClick={() => navigate(singlePath)}
+            >
+              {title}
+            </MenuItem>
+          );
+        }
+      }
+
+      return (
+        <SubMenu key={routerPath} value={routerPath} title={title} icon={Icon ? <Icon /> : undefined}>
+          {menuItemsRender(children, routerPath)}
+        </SubMenu>
+      );
+    });
+  }
+  return menuItemsRender(menus, parentPath);
 };
 
 /**
@@ -74,7 +75,9 @@ export const HeaderMenu = memo(() => {
   const globalState = useAppSelector(selectGlobal);
   const location = useLocation();
   const [active, setActive] = useState<MenuValue>(location.pathname); // todo
-
+  const navigate = useNavigate();
+  const routers = useRouters();
+  const menuRender = useCallback(() => renderMenuItems(navigate, routers), [routers]);
   return (
     <HeadMenu
       expandType='popup'
@@ -83,7 +86,7 @@ export const HeaderMenu = memo(() => {
       theme={globalState.theme}
       onChange={(v) => setActive(v)}
     >
-      {renderMenuItems(router)}
+      {menuRender()}
     </HeadMenu>
   );
 });
@@ -94,10 +97,11 @@ export const HeaderMenu = memo(() => {
 export default memo((props: IMenuProps) => {
   const location = useLocation();
   const globalState = useAppSelector(selectGlobal);
-
   const { version } = globalState;
   const bottomText = globalState.collapsed ? version : `TDesign Starter ${version}`;
-
+  const navigate = useNavigate();
+  const routers = useRouters();
+  const menuRender = useCallback(() => renderMenuItems(navigate, routers), [routers]);
   return (
     <Menu
       width='232px'
@@ -109,7 +113,7 @@ export default memo((props: IMenuProps) => {
       operations={props.showOperation ? <div className={Style.menuTip}>{bottomText}</div> : undefined}
       logo={props.showLogo ? <MenuLogo collapsed={globalState.collapsed} /> : undefined}
     >
-      {renderMenuItems(router)}
+      {menuRender()}
     </Menu>
   );
 });

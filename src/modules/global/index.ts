@@ -1,10 +1,12 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ETheme } from 'types/index.d';
 import { Color } from 'tvision-color';
 import { CHART_COLORS, defaultColor } from 'configs/color';
 import { generateColorMap, insertThemeStylesheet } from 'utils/color';
 import { RootState } from '../store';
 import { version } from '../../../package.json';
+import { IRouter } from 'router';
+import { getRouters } from 'services/common';
 
 const namespace = 'global';
 
@@ -38,6 +40,8 @@ export interface IGlobalState {
   showBreadcrumbs: boolean;
   showFooter: boolean;
   chartColors: Record<string, string>;
+  routes: IRouter[];
+  isLoading: boolean;
 }
 
 const defaultTheme = ETheme.light;
@@ -56,8 +60,11 @@ const initialState: IGlobalState = {
   showBreadcrumbs: true,
   showFooter: true,
   chartColors: CHART_COLORS[defaultTheme],
+  routes: [],
+  isLoading: true,
 };
 
+export const fetchRoutes = createAsyncThunk(`${namespace}/fetchRoutes`, () => getRouters());
 // 创建带有命名空间的reducer
 const globalSlice = createSlice({
   name: namespace,
@@ -129,8 +136,23 @@ const globalSlice = createSlice({
     switchFullPage: (state, action) => {
       state.isFullPage = !!action?.payload;
     },
+    togglesLoading: (state, action) => {
+      state.isLoading = action?.payload;
+    },
   },
-  extraReducers: () => {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchRoutes.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchRoutes.fulfilled, (state, action) => {
+        state.routes = action.payload;
+        state.isLoading = false;
+      })
+      .addCase(fetchRoutes.rejected, (state) => {
+        state.isLoading = false;
+      });
+  },
 });
 
 export const selectGlobal = (state: RootState) => state.global;
@@ -146,6 +168,7 @@ export const {
   switchLayout,
   switchFullPage,
   openSystemTheme,
+  togglesLoading,
 } = globalSlice.actions;
 
 export default globalSlice.reducer;
