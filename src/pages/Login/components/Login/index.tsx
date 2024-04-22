@@ -27,10 +27,10 @@ export default function Login() {
     if (e.validateResult === true) {
       try {
         const formValue = formRef.current?.getFieldsValue?.(true) || {};
-        console.log(formValue)
+        console.log(formValue);
 
         const logInfo = await toLogin(formValue);
-        console.log(logInfo)
+        console.log(logInfo);
         await dispatch(login(logInfo));
         MessagePlugin.success('登录成功');
         navigate('/dashboard/base');

@@ -27,5 +27,5 @@ instance.interceptors.response.use(
   },
   (e) => Promise.reject(e),
 );
-export const request = instance
+export const request = instance;
 export default instance;

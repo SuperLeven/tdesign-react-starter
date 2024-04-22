@@ -1,5 +1,3 @@
-import { request } from "utils/request"
+import { request } from 'utils/request';
 
-export const toLogin = (data: any): Promise<any> => {
-  return request.post('/auth/account/login', data)
-}
+export const toLogin = (data: any): Promise<any> => request.post('/auth/account/login', data);
