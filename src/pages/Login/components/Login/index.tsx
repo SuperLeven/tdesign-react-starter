@@ -9,6 +9,7 @@ import { login } from 'modules/user';
 import useCountdown from '../../hooks/useCountDown';
 
 import Style from './index.module.less';
+import { toLogin } from 'services/login';
 
 const { FormItem } = Form;
 
@@ -26,10 +27,12 @@ export default function Login() {
     if (e.validateResult === true) {
       try {
         const formValue = formRef.current?.getFieldsValue?.(true) || {};
-        await dispatch(login(formValue));
+        console.log(formValue)
 
+        const logInfo = await toLogin(formValue);
+        console.log(logInfo)
+        await dispatch(login(logInfo));
         MessagePlugin.success('登录成功');
-
         navigate('/dashboard/base');
       } catch (e) {
         console.log(e);
@@ -53,15 +56,15 @@ export default function Login() {
       >
         {loginType === 'password' && (
           <>
-            <FormItem name='account' rules={[{ required: true, message: '账号必填', type: 'error' }]}>
-              <Input size='large' placeholder='请输入账号：admin' prefixIcon={<UserIcon />}></Input>
+            <FormItem name='username' rules={[{ required: true, message: '账号必填', type: 'error' }]}>
+              <Input size='large' placeholder='请输入账号' prefixIcon={<UserIcon />}></Input>
             </FormItem>
             <FormItem name='password' rules={[{ required: true, message: '密码必填', type: 'error' }]}>
               <Input
                 size='large'
                 type={showPsw ? 'text' : 'password'}
                 clearable
-                placeholder='请输入登录密码：admin'
+                placeholder='请输入登录密码'
                 prefixIcon={<LockOnIcon />}
                 suffixIcon={
                   showPsw ? (

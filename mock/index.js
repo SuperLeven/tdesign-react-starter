@@ -1,3 +1,6 @@
 import getList from './api/getList';
-
-export default [getList];
+import login from './api/login';
+export default {
+  getList,
+  login,
+};
