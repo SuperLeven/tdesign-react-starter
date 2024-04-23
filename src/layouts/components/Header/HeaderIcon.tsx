@@ -1,6 +1,6 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Popup, Badge, Dropdown, Space } from 'tdesign-react';
+import { Button, Popup, Badge, Dropdown, Space, Avatar } from 'tdesign-react';
 import {
   Icon,
   LogoGithubIcon,
@@ -14,6 +14,7 @@ import { useAppDispatch } from 'modules/store';
 import { toggleSetting } from 'modules/global';
 import { logout } from 'modules/user';
 import Style from './HeaderIcon.module.less';
+import { getUserInfo } from './service';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -36,9 +37,15 @@ export default memo(() => {
   };
   const handleLogout = async () => {
     await dispatch(logout());
+    localStorage.removeItem('token');
+    dispatch(toggleSetting());
     navigate('/login/index');
   };
-
+  const [userInfo, setUserInfo] = useState<User | Record<string, string>>({});
+  useEffect(() => {
+    getUserInfo().then(setUserInfo);
+  }, []);
+  console.log(userInfo);
   return (
     <Space align='center'>
       <Badge className={Style.badge} count={6} dot={false} maxCount={99} shape='circle' showZero={false} size='medium'>
@@ -66,8 +73,14 @@ export default memo(() => {
       </Popup>
       <Dropdown trigger={'click'} onClick={clickHandler}>
         <Button variant='text' className={Style.dropdown}>
-          <Icon name='user-circle' className={Style.icon} />
-          <span className={Style.text}>Tencent</span>
+          {userInfo.headImg ? (
+            <div className={Style.icon}>
+              <Avatar image={userInfo.headImg}></Avatar>{' '}
+            </div>
+          ) : (
+            <Icon name='user-circle' className={Style.icon} />
+          )}
+          <span className={Style.text}>{userInfo?.username}</span>
           <Icon name='chevron-down' className={Style.icon} />
         </Button>
         <DropdownMenu>

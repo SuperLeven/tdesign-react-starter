@@ -98,7 +98,7 @@ export default memo((props: IMenuProps) => {
   const location = useLocation();
   const globalState = useAppSelector(selectGlobal);
   const { version } = globalState;
-  const bottomText = globalState.collapsed ? version : `TDesign Starter ${version}`;
+  const bottomText = globalState.collapsed ? version : `Leven Admin ${version}`;
   const navigate = useNavigate();
   const routers = useRouters();
   const menuRender = useCallback(() => renderMenuItems(navigate, routers), [routers]);

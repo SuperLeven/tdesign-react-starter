@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, MessagePlugin, Input, Checkbox, Button, FormInstanceFunctions, SubmitContext } from 'tdesign-react';
 import { LockOnIcon, UserIcon, BrowseOffIcon, BrowseIcon, RefreshIcon } from 'tdesign-icons-react';
@@ -18,6 +18,8 @@ export type ELoginType = 'password' | 'phone' | 'qrcode';
 export default function Login() {
   const [loginType, changeLoginType] = useState<ELoginType>('password');
   const [showPsw, toggleShowPsw] = useState(false);
+  const [rememberPwd, setRememberPwd] = useState([]);
+
   const { countdown, setupCountdown } = useCountdown(60);
   const formRef = useRef<FormInstanceFunctions>();
   const navigate = useNavigate();
@@ -25,19 +27,20 @@ export default function Login() {
 
   const onSubmit = async (e: SubmitContext) => {
     if (e.validateResult === true) {
-      try {
-        const formValue = formRef.current?.getFieldsValue?.(true) || {};
-        console.log(formValue);
-
-        const logInfo = await toLogin(formValue);
-        console.log(logInfo);
-        await dispatch(login(logInfo));
-        MessagePlugin.success('登录成功');
-        navigate('/dashboard/base');
-      } catch (e) {
-        console.log(e);
-        MessagePlugin.error('登录失败');
+      const formValue = formRef.current?.getFieldsValue?.(true) || {};
+      const logInfo = await toLogin(formValue);
+      await dispatch(login(logInfo.user));
+      localStorage.setItem('token', logInfo.token);
+      if (rememberPwd && rememberPwd.length) {
+        localStorage.setItem('rememberPwd', JSON.stringify(rememberPwd));
+        localStorage.setItem('loginUser', JSON.stringify(formValue));
+      } else {
+        localStorage.removeItem('rememberPwd');
+        localStorage.removeItem('loginUser');
       }
+
+      MessagePlugin.success('登录成功');
+      navigate('/dashboard/base');
     }
   };
 
@@ -45,7 +48,43 @@ export default function Login() {
     formRef.current?.reset?.();
     changeLoginType(val);
   };
-
+  useEffect(() => {
+    // 检查是否记住账号信息
+    const isRememberAccount = localStorage.getItem('rememberPwd');
+    if (isRememberAccount) {
+      // 如果记住账号信息，则设置记住密码的状态
+      setRememberPwd(JSON.parse(isRememberAccount));
+      // 尝试从localStorage获取登录用户信息
+    }
+  }, []);
+  const getLoginInfo = (key: string): string => {
+    if (import.meta.env.MODE === 'development') {
+      switch (key) {
+        case 'username':
+          return 'super_leven';
+        case 'password':
+          return 'leven123456';
+        default:
+          return '';
+      }
+    }
+    const loginUser = localStorage.getItem('loginUser');
+    if (loginUser) {
+      // 如果登录用户信息存在，则解析账号信息
+      const account = JSON.parse(loginUser);
+      switch (key) {
+        // 根据key返回对应的用户信息
+        case 'username':
+          return account.username;
+        case 'password':
+          return account.password;
+        default:
+          // 如果key不匹配任何信息，返回空字符串
+          return '';
+      }
+    }
+    return '';
+  };
   return (
     <div>
       <Form
@@ -56,14 +95,22 @@ export default function Login() {
       >
         {loginType === 'password' && (
           <>
-            <FormItem name='username' rules={[{ required: true, message: '账号必填', type: 'error' }]}>
-              <Input size='large' placeholder='请输入账号' prefixIcon={<UserIcon />}></Input>
+            <FormItem
+              name='username'
+              initialData={getLoginInfo('username')}
+              rules={[{ required: true, message: '账号必填', type: 'error' }]}
+            >
+              <Input size='large' clearable placeholder='请输入账号' prefixIcon={<UserIcon />}></Input>
             </FormItem>
-            <FormItem name='password' rules={[{ required: true, message: '密码必填', type: 'error' }]}>
+            <FormItem
+              name='password'
+              initialData={getLoginInfo('password')}
+              rules={[{ required: true, message: '密码必填', type: 'error' }]}
+            >
               <Input
                 size='large'
                 type={showPsw ? 'text' : 'password'}
-                clearable
+                defaultValue='22222'
                 placeholder='请输入登录密码'
                 prefixIcon={<LockOnIcon />}
                 suffixIcon={
@@ -76,7 +123,11 @@ export default function Login() {
               />
             </FormItem>
             <div className={classnames(Style.checkContainer, Style.rememberPwd)}>
-              <Checkbox>记住账号</Checkbox>
+              <Checkbox.Group value={rememberPwd} onChange={setRememberPwd}>
+                <Checkbox value='1' checked={!!rememberPwd.length}>
+                  记住账号
+                </Checkbox>
+              </Checkbox.Group>
               <span className={Style.checkContainerTip}>忘记账号？</span>
             </div>
           </>
